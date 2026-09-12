@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bro V2</title><style>body{font-family:system-ui;margin:0;background:#f3f4f6;color:#111827}.card{max-width:760px;margin:28px auto;padding:24px;background:white;border-radius:24px;box-shadow:0 10px 35px #0002}h1{font-size:40px;margin:0}.sub{color:#6b7280;margin:4px 0 20px}button{width:100%;padding:17px;border:0;border-radius:16px;background:#111827;color:white;font-size:19px;font-weight:700}.status{margin-top:16px;padding:15px;border-radius:14px;background:#f3f4f6}.help{margin-top:18px;color:#4b5563;line-height:1.7}</style></head><body><div class="card"><h1>Bro</h1><div class="sub">Your personal voice assistant — Version 2</div><button id="talk">🎤 Talk to Bro</button><div class="status" id="status">Ready</div><div class="help"><b>Try saying:</b><br>“Bro, open YouTube”<br>“Bro, open Instagram”<br>“Bro, open Gmail”<br>“Bro, search Google for C programming”<br>“Bro, search YouTube for Kannada songs”<br>“Bro, what time is it?”<br>“Bro, what can you do?”</div></div><script>
+const s=document.getElementById('status'),b=document.getElementById('talk'),SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function speak(t){s.textContent='Bro: '+t;speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang='en-IN';speechSynthesis.speak(u)}
+function go(url,msg){speak(msg);setTimeout(()=>location.href=url,350)}
+function cmd(raw){let t=raw.toLowerCase().trim();if(!t.includes('bro'))return speak('Please start the command with Bro.');
+if(t.includes('what can you do')||t.includes('help'))return speak('I can open websites, search Google or YouTube, and tell you the time.');
+if(t.includes('what time')||t.includes('time is it')||t.includes('current time'))return speak('It is '+new Date().toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}));
+let m=t.match(/search youtube(?: for)? (.+)$/);if(m){let q=m[1].trim();return go('https://www.youtube.com/results?search_query='+encodeURIComponent(q),'Searching YouTube for '+q)}
+m=t.match(/search(?: google)?(?: for)? (.+)$/);if(m){let q=m[1].replace(/^bro[, ]+/,'').trim();return go('https://www.google.com/search?q='+encodeURIComponent(q),'Searching Google for '+q)}
+if(t.includes('open youtube'))return go('https://www.youtube.com/','Opening YouTube');
+if(t.includes('open instagram'))return go('https://www.instagram.com/','Opening Instagram');
+if(t.includes('open gmail'))return go('https://mail.google.com/','Opening Gmail');
+if(t.includes('open google'))return go('https://www.google.com/','Opening Google');
+if(t.includes('open whatsapp'))return go('https://web.whatsapp.com/','Opening WhatsApp Web');
+speak('I heard: '+raw+'. I have not added that command yet.')}
+if(!SR){s.textContent="Speech recognition isn't supported by this browser.";b.disabled=true}else{let r=new SR();r.lang='en-IN';r.interimResults=false;r.maxAlternatives=1;b.onclick=()=>{s.textContent='🎤 Listening...';try{r.start()}catch(e){}};r.onresult=e=>cmd(e.results[0][0].transcript);r.onerror=e=>s.textContent='Voice error: '+e.error}
+</script></body></html>
