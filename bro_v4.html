@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bro — Personal Assistant V4</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f1f3f6;color:#111827}
+.card{max-width:900px;margin:28px auto;background:#fff;border-radius:28px;padding:28px;box-shadow:0 12px 35px #0001}
+h1{font-size:44px;margin:0 0 4px}.sub{font-size:20px;color:#6b7280;margin-bottom:24px}
+button{width:100%;border:0;border-radius:18px;padding:18px;background:#111827;color:#fff;font-size:21px;font-weight:700}
+.box{margin-top:18px;padding:18px;border-radius:16px;background:#f3f4f6;font-size:18px;line-height:1.5}
+li{margin:10px 0;font-size:17px}.small{color:#6b7280;font-size:14px;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>Bro</h1>
+<div class="sub">Your personal voice assistant — Version 4</div>
+<button id="talk">🎤 Talk to Bro</button>
+<div id="reply" class="box">Bro: Ready bro. What do you need?</div>
+<div id="heard" class="box" style="display:none"></div>
+<h2>Try saying</h2>
+<ul>
+<li>“Bro, open YouTube”</li>
+<li>“Bro, open Google”</li>
+<li>“Bro, open Instagram”</li>
+<li>“Bro, search Google for C programming”</li>
+<li>“Bro, search YouTube for Kannada songs”</li>
+<li>“Bro, what time is it?”</li>
+<li>“Bro, set an alarm for 7:05 AM”</li>
+<li>“Bro, cancel the alarm”</li>
+<li>“Bro, what can you do?”</li>
+</ul>
+<div class="small">V4 browser version: alarm reminders work while this page remains open. Android system alarms and direct phone controls require a native Android app.</div>
+</div>
+<script>
+const talk=document.getElementById("talk"),reply=document.getElementById("reply"),heard=document.getElementById("heard");
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let alarmTimer=null, alarmTime=null;
+
+function speak(t){
+ reply.textContent="Bro: "+t;
+ if("speechSynthesis"in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.rate=1;u.pitch=1;speechSynthesis.speak(u);}
+}
+function go(url,name){speak("Opening "+name+".");setTimeout(()=>location.href=url,400)}
+function google(q){speak("Searching Google for "+q+".");setTimeout(()=>location.href="https://www.google.com/search?q="+encodeURIComponent(q),400)}
+function youtube(q){speak("Searching YouTube for "+q+".");setTimeout(()=>location.href="https://www.youtube.com/results?search_query="+encodeURIComponent(q),400)}
+
+function setAlarm(text){
+ const m=text.match(/(?:set\s+(?:an\s+)?alarm|alarm)(?:\s+for|\s+at)?\s+(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?/i);
+ if(!m)return false;
+ let h=+m[1],min=m[2]?+m[2]:0,ap=m[3]?m[3].toLowerCase().replace(/\./g,""):null;
+ if(ap==="pm"&&h<12)h+=12;if(ap==="am"&&h===12)h=0;
+ let now=new Date(),target=new Date(now);target.setHours(h,min,0,0);
+ if(target<=now)target.setDate(target.getDate()+1);
+ clearTimeout(alarmTimer);alarmTime=target;
+ speak("Okay bro. Alarm set for "+target.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})+".");
+ alarmTimer=setTimeout(()=>{alarmTimer=null;alarmTime=null;speak("Bro, your alarm is ringing.");alert("⏰ Bro alarm is ringing!");},target-now);
+ return true;
+}
+function cancelAlarm(){
+ if(!alarmTimer){speak("There is no active browser alarm, bro.");return}
+ clearTimeout(alarmTimer);alarmTimer=null;alarmTime=null;speak("Done bro. Alarm cancelled.");
+}
+function process(raw){
+ heard.style.display="block";heard.textContent="You said: "+raw;
+ let t=raw.toLowerCase().trim();
+ if(!t.includes("bro")){speak("Please start the command with Bro.");return}
+ let c=t.replace(/\bbro\b/g,"").replace(/[,.!?]/g," ").replace(/\s+/g," ").trim();
+
+ if(c.includes("cancel")&&c.includes("alarm")){cancelAlarm();return}
+ if(c.includes("what can you do")||c==="help"){speak("I can open websites, search Google or YouTube, tell the time, and set or cancel a browser alarm.");return}
+ if(c.includes("what time")||c==="time"||c.includes("current time")){speak("It is "+new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}));return}
+ if(setAlarm(c))return;
+
+ if(c.includes("open youtube")){go("https://www.youtube.com","YouTube");return}
+ if(c.includes("open google")){go("https://www.google.com","Google");return}
+ if(c.includes("open instagram")){go("https://www.instagram.com","Instagram");return}
+ if(c.includes("open gmail")){go("https://mail.google.com","Gmail");return}
+
+ let m=c.match(/search\s+youtube(?:\s+for)?\s+(.+)/i);
+ if(m){youtube(m[1]);return}
+ m=c.match(/search\s+(?:google\s+)?(?:for\s+)?(.+)/i);
+ if(m){google(m[1]);return}
+
+ speak("I heard: "+raw+". We haven't added that command yet.");
+}
+if(!SR){talk.disabled=true;speak("Voice recognition is not supported here. Try Chrome.");}
+else{
+ const r=new SR();r.lang="en-IN";r.interimResults=false;r.maxAlternatives=1;
+ talk.onclick=()=>{reply.textContent="Bro: Listening...";try{r.start()}catch(e){}};
+ r.onresult=e=>process(e.results[0][0].transcript);
+ r.onerror=e=>reply.textContent="Bro: Voice error: "+e.error+". Try again.";
+}
+</script>
+</body>
+</html>
